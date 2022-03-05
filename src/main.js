@@ -11,20 +11,23 @@ const store = createStore({
     state () {
         return {
             videos: [],
-            isConnected: false
+            connectedAccount: null
         }
     },
     mutations: {
         addVideo (state, video) {
             state.videos.unshift(video);
         },
-        setIsConnected (state, isConnected) {
-            state.isConnected = isConnected;
+        setConnectedAccount (state, account) {
+            state.connectedAccount = account;
         }
     },
     getters: {
+        connectedAccount (state) {
+            return state.connectedAccount;
+        },
         isConnected (state) {
-            return state.isConnected;
+            return state.connectedAccount !== null;
         },
         videos (state) {
             return state.videos;
@@ -47,11 +50,11 @@ const store = createStore({
         },
         async connectToWeb3(context) {
             await provider.send("eth_requestAccounts", []);
-            context.commit("setIsConnected", true);
-        },
-        async getAccounts() {
             const accounts = await provider.send("eth_accounts", []);
-            console.log(accounts);
+            context.commit("setConnectedAccount", accounts[0]);
+        },
+        async updateConnectedAccount(context, account) {
+            context.commit("setConnectedAccount", account);
         }
     }
 })

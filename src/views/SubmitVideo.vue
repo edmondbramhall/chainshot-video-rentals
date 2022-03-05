@@ -1,6 +1,8 @@
 <template>
   <section class="section">
     <h2 class="title">Submit video</h2>
+    <h3>Magic word: {{magicWord}}</h3>
+    <button @click="getMagicWord" class="button">Get the magic word</button>
     <p><a @click="$router.go(-1)" class="button is-primary">Back</a></p>
   </section>
 </template>
@@ -10,9 +12,12 @@ export default {
   mixins: [utils],
   data() {
     return {  
-      // isLoaded: false,
-      // tx: null,
-      // hash: null
+      magicWord: "No idea!"
+    }
+  },
+  methods: {
+    async getMagicWord() {
+      
     }
   },
   async mounted() {
