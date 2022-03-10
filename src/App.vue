@@ -2,7 +2,7 @@
   <div>
     <nav class="navbar is-light" role="navigation" aria-label="main navigation">
       <div class="navbar-brand">
-        <RouterLink to="/" class="navbar-item subtitle">Ed's Video Rentals</RouterLink>
+        <RouterLink to="/" class="navbar-item subtitle">Evil Ed's Video Rentals</RouterLink>
       </div>
       <div class="navbar-menu">
         <div class="navbar-start">
@@ -10,9 +10,7 @@
           <RouterLink to="/moderate" class="navbar-item">Moderate videos</RouterLink>
         </div>
         <div class="navbar-end">
-          <div class="navbar-item">  
-            <meta-mask-status></meta-mask-status>
-          </div>
+          <meta-mask-status></meta-mask-status>
         </div>
       </div>
     </nav>
@@ -37,9 +35,6 @@ export default {
 
   },
   methods: {
-    isMetaMaskInstalled() {
-      return Boolean(ethereum && ethereum.isMetaMask);
-    }
     // changeNetwork() {
     //   this.$store.dispatch("changeNetwork", {
     //     networkName: this.selectedNetwork
@@ -54,8 +49,6 @@ export default {
   },
   async mounted() {
     await this.$store.dispatch("fetchVideos");
-    if (!this.isMetaMaskInstalled())
-      alert('You must install MetaMask to use this Dapp!');
   }
 }
 </script>

@@ -1,0 +1,19 @@
+//https://docs.opensea.io/docs/metadata-standards
+{
+    "description": "A human readable description of the item. Markdown is supported.", 
+    "external_url": "https://openseacreatures.io/3 URL ON THE DAPP, AS SHOWN ON OPENSEA", 
+    "image": "https://storage.googleapis.com/opensea-prod.appspot.com/puffs/3.png 350x350 IPFS URLs", 
+    "name": "Name of the item.",
+    "background_color": "",
+    "youtube_url" : "",
+    "attributes": [
+        {
+            "trait_type": "Base", 
+            "value": "Starfish"
+        }, 
+        {
+            "trait_type": "Eyes", 
+            "value": "Big"
+        }
+    ]
+}

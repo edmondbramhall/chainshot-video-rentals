@@ -1,71 +1,27 @@
 //SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "hardhat/console.sol";
 
-contract VideoRentals {
-    enum VoteStates {Absent, Yes, No}
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-    struct Proposal {
-        address creator;
-        string question;
-        uint yesCount;
-        uint noCount;
-        mapping (address => VoteStates) voteStates;
+contract VideoRentals is Ownable, ERC20 {
+    event Rental(address, address, uint256);
+    constructor() ERC20("VHSRentals", "VHS") {
+        _mint(msg.sender, 100000000 * 10 ** decimals());
     }
-
-    Proposal[] public proposals;
-
-    function proposalCount() external view returns(uint) {
-      return proposals.length;
+    //todo: should take in the id of the video, then work out the owner from the other contract
+    // call as punter
+    function rentVideo(address videoOwner, uint256 amount) public {
+        // require caller to have enough tokens
+        // can't rent off yourself
+        // transfer from the caller to the videoOwner address
+        transfer(videoOwner, amount * 10 ** decimals());
+        //emit Rental(msg.sender, videoOwner, amount);
     }
-
-    event ProposalCreated(uint);
-    event VoteCast(uint, address indexed);
-
-    mapping(address => bool) members;
-
-    string public magicString = "Tonto";
-
-    constructor(address[] memory _members) {
-        for(uint i = 0; i < _members.length; i++) {
-            members[_members[i]] = true;
-        }
-        members[msg.sender] = true;
-    }
-
-    function newProposal(string calldata _question) external {
-        require(members[msg.sender]);
-        emit ProposalCreated(proposals.length);
-        Proposal storage proposal = proposals.push();
-        proposal.creator = msg.sender;
-        proposal.question = _question;
-    }
-
-    function castVote(uint _proposalId, bool _supports) external {
-        require(members[msg.sender]);
-        Proposal storage proposal = proposals[_proposalId];
-
-        // clear out previous vote
-        if(proposal.voteStates[msg.sender] == VoteStates.Yes) {
-            proposal.yesCount--;
-        }
-        if(proposal.voteStates[msg.sender] == VoteStates.No) {
-            proposal.noCount--;
-        }
-
-        // add new vote
-        if(_supports) {
-            proposal.yesCount++;
-        }
-        else {
-            proposal.noCount++;
-        }
-
-        // we're tracking whether or not someone has already voted
-        // and we're keeping track as well of what they voted
-        proposal.voteStates[msg.sender] = _supports ? VoteStates.Yes : VoteStates.No;
-
-        emit VoteCast(_proposalId, msg.sender);
+    function faucet(address recipient, uint256 amount) public onlyOwner {
+        // transfer from the caller to recipient address
+        transfer(recipient, amount * 10 ** decimals());
     }
 }

@@ -1,21 +1,25 @@
 <template>
-  <div class="buttons">
-    <button v-if="!isConnected" @click="connect" class="button">
-      <span class="icon">
-        <i class="fa-regular fa-circle"></i>
-      </span>
-      <span>connect to Web3</span>    
-    </button>
-    <button v-else @click="connect" class="button is-success">
-      <span class="icon">
-        <i class="fa-solid fa-circle"></i>
-      </span>
-      <span>connected (account: {{shortenHex(connectedAccount)}})</span>    
-    </button>    
-  </div> 
+  <p class="navbar-item"><span class="tag is-small is-light"> </span></p>
+  <div class="navbar-item">
+    <div class="buttons">
+      <button v-if="!isConnected" @click="connect" class="button">
+        <span class="icon">
+          <i class="fa-regular fa-circle"></i>
+        </span>
+        <span>connect to Web3</span>    
+      </button>
+      <button v-else @click="connect" class="button is-success">
+        <span class="icon">
+          <i class="fa-solid fa-circle"></i>
+        </span>
+        <span>connected (account: {{shortenHex(connectedAccount)}})</span>    
+      </button>    
+    </div> 
+  </div>
 </template>
 <script>
 import utils from '../mixins/utils.js'
+import { ethers } from 'ethers'
 export default {
   mixins: [ utils ],
   data() {
@@ -28,9 +32,15 @@ export default {
     },
     connectedAccount() {
       return this.$store.getters.connectedAccount;
-    }
+    },
+    connectedAccountBalance() {
+      return ethers.utils.formatEther(this.$store.getters.connectedAccountBalance);
+    },
   },
   methods: {
+    // async network() {
+    //   return this.$store.dispatch("getNetwork");
+    // },
     async connect() {
       await this.$store.dispatch("connectToWeb3");
     },
@@ -43,11 +53,18 @@ export default {
     },     
     handleChainChanged(chainId) {
       window.location.reload();
-    }       
+    },
+    isMetaMaskInstalled() {
+      return Boolean(window.ethereum && window.ethereum.isMetaMask);
+    }
   },
-  mounted() {
-    ethereum.on('accountsChanged', (accounts) => this.handleAccountsChanged(accounts));
-    ethereum.on('chainChanged', (chainId) => this.handleChainChanged(chainId));
+  async mounted() {
+    if (!this.isMetaMaskInstalled()) {
+      alert('You must install MetaMask to use this Dapp!');
+    } else {
+      ethereum.on('accountsChanged', (accounts) => this.handleAccountsChanged(accounts));
+      ethereum.on('chainChanged', (chainId) => this.handleChainChanged(chainId));
+    }
     // ethereum.on('connect', (connectionInfo) => console.log('connect', connectionInfo));
     // ethereum.on('disconnect', (error) => console.log('disconnect', error));
     // ethereum.on('message', (message) => console.log('message', message));
