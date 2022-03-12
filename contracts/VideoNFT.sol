@@ -37,7 +37,6 @@ contract VideoNFT is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable {
         //require(msg.sender)
         // can't rent off yourself
         // transfer from the caller to the videoOwner address
-        IERC20(erc20ContractAddress).approve(msg.sender, amount);
         IERC20(erc20ContractAddress).transferFrom(msg.sender, ownerOf(tokenId), amount);
         emit Rented(tokenId, msg.sender, ownerOf(tokenId), amount);
     }

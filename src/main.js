@@ -94,13 +94,13 @@ const store = createStore({
             context.commit("setConnectedAccount", { account: context.state.connectedAccount, balance: balance });
         },
         async rentVideo(context, payload) {
-            const ownerAddress = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
             const signer = await provider.getSigner();
-            // console.log('renting video');
-            // console.log('contract ' + contractConfig.rentalsAddress);            
-            // console.log('signer ' + await signer.getAddress());
+            const address = await signer.getAddress();        
+            const amountInWei = ethers.utils.parseUnits(payload.amount.toString(), "ether");
             const contract = new ethers.Contract(contractConfig.nftAddress, VideoNFT.abi, signer);
-            return await contract.rentVideo(contractConfig.vhsTokenAddress, payload.tokenId, ethers.utils.parseEther(payload.amount.toString()));
+            const tokenContract = new ethers.Contract(contractConfig.vhsTokenAddress, VHSToken.abi, signer);
+            await tokenContract.approve(contractConfig.nftAddress, amountInWei);
+            return await contract.rentVideo(contractConfig.vhsTokenAddress, payload.tokenId, amountInWei);
         },
         async mintVideoNft(context, movieData) {
             // console.log('minting nft');
@@ -148,6 +148,9 @@ const store = createStore({
             // update token balance for connected wallet
             const videosReponse = await axios.put(`https://localhost:3054/videos/${payload.tokenId}`, 'verified', null);
             context.commit("updateVideos", videosReponse.data.map(v => v.pinataContent));
+            await context.dispatch("updateConnectedAccountBalance");
+        },
+        async updateAfterRent(context) {
             await context.dispatch("updateConnectedAccountBalance");
         },
         async updateConnectedAccount(context, account) {

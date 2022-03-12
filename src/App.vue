@@ -86,8 +86,8 @@ export default {
         this.popToast(`VideoNFT ${tokenId} was successfully minted! The owner is ${to}.`);
     });                
     this.nftContractAsDapp.on("Rented", async (tokenId, renter, owner, amount) => {
-        // update token balance
-        this.popToast(`Rented: ${tokenId} ${renter} ${owner} ${amount}`);
+        await this.$store.dispatch('updateAfterRent');
+        this.popToast(`${renter} rented VideoNFT ${tokenId} from ${owner} for ${amount}!`);
     });
   }
 }
