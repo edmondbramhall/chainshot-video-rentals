@@ -1,15 +1,4 @@
-# Basic Sample Hardhat Project
+# Evil Ed's Video Store
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, a sample script that deploys that contract, and an example of a task implementation, which simply lists the available accounts.
-
-Try running some of the following tasks:
-
-```shell
-npx hardhat accounts
-npx hardhat compile
-npx hardhat clean
-npx hardhat test
-npx hardhat node
-node scripts/sample-script.js
-npx hardhat help
-```
+##Issues
+1. Keeping the list of videos held by the dApp in sync with the blockchain is difficult. The obvious approach is to use the blockchain as the database, and generate the list of data by enumerating the tokens in the VideoNFT contract. The massive drawbacks of this are (a) that it's very slow, and (b) that it's expensive. The approach I took instead is to maintain the list of videos on the server, and persist it to db (in this case just a file). That's not perfect either though, because to keep this list up to date the dApp needs to react to events fired by the VideoNFT contract. Should the dApp be unavailable for any reason (eg server outage, or user moves away from the site) then we'll miss events and our local list falls out of sync. Overall the best approach is probably to use an external provider that's working with on-chain data, but providing that to the dApp over an off-chain API, if such a service exists (Miralis?).

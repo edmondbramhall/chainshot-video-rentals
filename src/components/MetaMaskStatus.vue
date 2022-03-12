@@ -2,17 +2,11 @@
   <p class="navbar-item"><span class="tag is-small is-light"> </span></p>
   <div class="navbar-item">
     <div class="buttons">
-      <button v-if="!isConnected" @click="connect" class="button">
-        <span class="icon">
-          <i class="fa-regular fa-circle"></i>
-        </span>
-        <span>connect to Web3</span>    
-      </button>
-      <button v-else @click="connect" class="button is-success">
+      <button v-if="isConnected" class="button is-success">
         <span class="icon">
           <i class="fa-solid fa-circle"></i>
         </span>
-        <span>connected (account: {{shortenHex(connectedAccount)}})</span>    
+        <span>connected (account: {{shortenHex(connectedAccount)}}, balance: {{connectedAccountBalance}} VHS)</span>    
       </button>    
     </div> 
   </div>
@@ -41,15 +35,16 @@ export default {
     // async network() {
     //   return this.$store.dispatch("getNetwork");
     // },
-    async connect() {
-      await this.$store.dispatch("connectToWeb3");
-    },
+    // async connect() {
+    //   await this.$store.dispatch("connectToWeb3");
+    // },
     async handleAccountsChanged(accounts) {
-      if (accounts.length === 0) {
-        await this.$store.dispatch("updateConnectedAccount", null);
-      } else if (accounts[0] !== this.$store.getters.connectedAccount) {
-        await this.$store.dispatch("updateConnectedAccount", accounts[0]);
-      }
+      console.log("accounts changed event", accounts);
+      // if (accounts.length === 0) {
+      //   await this.$store.dispatch("updateConnectedAccount", null);
+      // } else if (accounts[0] !== this.$store.getters.connectedAccount) {
+      //   await this.$store.dispatch("updateConnectedAccount", accounts[0]);
+      // }
     },     
     handleChainChanged(chainId) {
       window.location.reload();

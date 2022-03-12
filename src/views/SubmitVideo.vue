@@ -83,6 +83,7 @@ export default {
   mixins: [utils],
   data() {
     return {  
+      tmdbIds: [33518, 10489, 9362, 40466, 9360, 9825, 578, 38258, 53060],
       tmdbId: null,
       movieData: {
         title: null,
@@ -94,11 +95,12 @@ export default {
     }
   },
   methods: {
-    async faucet() {
-      await this.$store.dispatch("hitFaucet");
+    getRandomTmdbId() {
+      return this.tmdbIds[Math.floor(Math.random() * this.tmdbIds.length - 1)];
     },
     async mint() {
       await this.$store.dispatch("mintVideoNft", this.movieData);
+      this.$router.push({ path: '/' });
     },
     async populateFormFromTmdb() {
       const getResult = await axios.get(`https://api.themoviedb.org/3/movie/${this.tmdbId}?api_key=${import.meta.env.VITE_TMDB_APIKEY}&append_to_response=videos`);
@@ -108,15 +110,10 @@ export default {
       this.movieData.title = movieJson.title;
       this.movieData.description = movieJson.overview;
       this.movieData.videoUrl = `https://www.youtube.com/watch?v=${movieJson.videos.results[0].key}`;
-      await this.mint();
     }
   },
-  async mounted() {
-    // this.hash = this.$route.params.hash;
-    // this.tx = await this.$store.dispatch("fetchTransaction", { 
-    //   txHash: this.hash 
-    // });
-    // this.isLoaded = true;
+  mounted() {
+    this.tmdbId = this.getRandomTmdbId();
   }
 }
 </script>
