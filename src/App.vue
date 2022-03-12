@@ -1,6 +1,6 @@
 <template>
   <div>
-    <nav class="navbar is-light" role="navigation" aria-label="main navigation">
+    <nav class="navbar is-white has-shadow" role="navigation" aria-label="main navigation">
       <div class="navbar-brand">
         <RouterLink to="/" class="navbar-item subtitle">Evil Ed's Video Rentals</RouterLink>
       </div>
@@ -42,7 +42,7 @@ import { RouterLink, RouterView } from 'vue-router'
 import MetaMaskStatus from './components/MetaMaskStatus.vue'
 const { ethereum } = window;
 export default {
-  inject: ['contract'],
+  inject: ['nftContractAsDapp'],
   components: {
     MetaMaskStatus
   },
@@ -58,6 +58,13 @@ export default {
     }
   },
   methods: {
+    popToast(msg) {
+      this.$toast(msg, {
+        slotLeft: '<i class="fa fa-bell"></i>',
+        positionX: 'center',
+        positionY: 'top'
+      })
+    },
     async connect() {
       await this.$store.dispatch("connectToWeb3");
     },
@@ -74,17 +81,13 @@ export default {
     // }
   },
   async mounted() {
-    this.contract.on("Minted", (tokenId, to) => {
-        // find video by tokenId
-        // update video status to minted
-        // update token balance for connected wallet
-        console.log(`Minted: ${tokenId} ${to}, update video status to minted.`);
-        this.$toast(`Minted: ${tokenId} ${to}, update video status to minted.`)
+    this.nftContractAsDapp.on("Minted", async (tokenId, to) => {
+        await this.$store.dispatch('updateVideoAfterMint', { tokenId, to });
+        this.popToast(`VideoNFT ${tokenId} was successfully minted! The owner is ${to}.`);
     });                
-    this.contract.on("Rented", (tokenId, renter, owner, amount) => {
+    this.nftContractAsDapp.on("Rented", async (tokenId, renter, owner, amount) => {
         // update token balance
-        // show event alert
-        console.log(`Rented: ${tokenId} ${renter} ${owner} ${amount}`);
+        this.popToast(`Rented: ${tokenId} ${renter} ${owner} ${amount}`);
     });
   }
 }

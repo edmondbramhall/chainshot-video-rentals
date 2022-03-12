@@ -41,3 +41,16 @@ app.post('/videos', (req, res) => {
   }  
 });
 
+app.put('/videos/:id', (req, res) => {
+  // videos.forEach(v => {
+  //   console.log(v.pinataContent.tokenId, req.params.id);
+  //   console.log(v.pinataContent.tokenId.toString() === req.params.id);
+  // });
+  videos.find(v => v.pinataContent.tokenId.toString() === req.params.id).pinataContent.status = 'verified';
+  try {
+    fs.writeFileSync('./videoDB.js', JSON.stringify(videos));
+    res.send(videos);
+  } catch (err) {
+    console.error(err)
+  }  
+});

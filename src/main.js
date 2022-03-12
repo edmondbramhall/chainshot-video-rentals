@@ -12,21 +12,7 @@ import contractConfig from '../app/__config.json'
 
 const provider = new ethers.providers.Web3Provider(window.ethereum);
 const dappWallet = new ethers.Wallet(`${import.meta.env.VITE_PRIVATE_KEY}`, provider);
-const contract = new ethers.Contract(contractConfig.nftAddress, VideoNFT.abi, dappWallet);
-// contract.on("Minted", (tokenId, to) => {
-//     // find video by tokenId
-//     // update video status to minted
-//     // update token balance
-//     // show event alert
-//     console.log(`Minted: ${tokenId} ${to}, update video status to minted.`);
-//     //this.$toast(`Minted: ${tokenId} ${to}, update video status to minted.`)
-// });                
-// contract.on("Rented", (tokenId, renter, owner, amount) => {
-//     // update token balance
-//     // show event alert
-//     console.log(`Rented: ${tokenId} ${renter} ${owner} ${amount}`);
-// });
-
+const nftContractAsDapp = new ethers.Contract(contractConfig.nftAddress, VideoNFT.abi, dappWallet);
 const store = createStore({
     state () {
         return {
@@ -90,9 +76,6 @@ const store = createStore({
             try {
                 const resp = await axios.get('https://localhost:3054/videos');
                 context.commit("updateVideos", resp.data.map(v => v.pinataContent));
-                // for (let i = 0; i < resp.data.length; i++) {
-                //     context.commit("addVideo", resp.data[i].pinataContent);
-                // }
             } catch (err) {
                 // Handle Error Here
                 console.error(err);
@@ -104,6 +87,11 @@ const store = createStore({
             const contract = new ethers.Contract(contractConfig.vhsTokenAddress, VHSToken.abi, provider.getSigner());
             const balance = await contract.balanceOf(accounts[0]);
             context.commit("setConnectedAccount", { account: accounts[0], balance: balance });
+        },
+        async updateConnectedAccountBalance(context) {
+            const contract = new ethers.Contract(contractConfig.vhsTokenAddress, VHSToken.abi, provider.getSigner());
+            const balance = await contract.balanceOf(context.state.connectedAccount);
+            context.commit("setConnectedAccount", { account: context.state.connectedAccount, balance: balance });
         },
         async rentVideo(context, payload) {
             const ownerAddress = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
@@ -145,16 +133,22 @@ const store = createStore({
                         pinata_secret_api_key: import.meta.env.VITE_PINATA_APISECRET
                     }
                 });
-                await contract.safeMint(contractConfig.vhsTokenAddress, context.state.connectedAccount, resp.data.IpfsHash, ethers.utils.parseUnits("50", "ether"));
-                movieJson.pinataContent.tokenId = context.state.videos.length + 1;
+                await nftContractAsDapp.safeMint(contractConfig.vhsTokenAddress, context.state.connectedAccount, resp.data.IpfsHash, ethers.utils.parseUnits("50", "ether"));
+                movieJson.pinataContent.tokenId = context.state.videos.length;
                 movieJson.pinataContent.owner = context.state.connectedAccount;
                 movieJson.pinataContent.status = "pending";
                 const videosReponse = await axios.post(`https://localhost:3054/videos`, movieJson, null);
-                context.commit("updateVideos", videosReponse.data);
+                context.commit("updateVideos", videosReponse.data.map(v => v.pinataContent));
             } catch (err) {
                 // Handle Error Here
                 console.error(err);
             } 
+        },
+        async updateVideoAfterMint(context, payload) {
+            // update token balance for connected wallet
+            const videosReponse = await axios.put(`https://localhost:3054/videos/${payload.tokenId}`, 'verified', null);
+            context.commit("updateVideos", videosReponse.data.map(v => v.pinataContent));
+            await context.dispatch("updateConnectedAccountBalance");
         },
         async updateConnectedAccount(context, account) {
             context.commit("setConnectedAccount", account);
@@ -170,5 +164,5 @@ const app = createApp(App)
 app.use(router)
 app.use(store);
 app.use(DKToast);
-app.provide('contract', contract);
+app.provide('nftContractAsDapp', nftContractAsDapp);
 app.mount('#app')

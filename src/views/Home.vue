@@ -1,7 +1,10 @@
 <template>
   <div class="container">
     <section class="section">
-      <div class="columns is-multiline">
+      <div v-if="videos.length === 0" class="notification is-danger is-size-4">
+        Oh no! There are no videos on this site at all. What are you waiting for? <router-link to="/submit">Submit one now - earn VHS tokens!</router-link>
+      </div>
+      <div v-else class="columns is-multiline">
         <div v-for="video in videos" :key="video.tokenId" class="column is-one-fifth">
           <div class="card">
             <header class="card-header">
@@ -11,7 +14,8 @@
             </header>
             <div class="card-image" style="position:relative;">
               <figure class="image">
-                <span class="tag is-danger is-medium is-rounded" style="opacity:70%;position:absolute;top:87%;left:5%;width:90%">{{video.status}}</span>
+                <span v-if="video.status === 'pending'" class="tag is-danger is-medium is-rounded" style="opacity:70%;position:absolute;top:87%;left:5%;width:90%">{{video.status}}</span>
+                <span v-else class="tag is-success is-medium is-rounded" style="opacity:70%;position:absolute;top:87%;left:5%;width:90%">{{video.status}}</span>
                 <img :src="video.image" :alt="video.name" width="342">
               </figure>
             </div>          
@@ -23,7 +27,7 @@
             </div>
             <div class="card-footer">
               <div class="card-footer-item">
-                <button v-if="video.status === 'minted'" @click.prevent="rent(video.tokenId)" class="button is-success">watch for 10 VHS</button>  
+                <button v-if="video.status === 'verified'" @click.prevent="rent(video.tokenId)" class="button is-success">watch for 10 VHS</button>  
                 <button v-else class="button" disabled>watch for 10 VHS</button>
               </div>
             </div>
