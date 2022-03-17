@@ -24,7 +24,7 @@
           </div>
           <div class="message-body">
             <div class="buttons" style="justify-content:center;">
-              <button v-if="!isConnected" @click="connect" class="button is-primary is-large">
+              <button @click="connect" class="button is-primary is-large">
                 <span class="icon">
                   <i class="fa-regular fa-circle"></i>
                 </span>
@@ -42,14 +42,12 @@ import { RouterLink, RouterView } from 'vue-router'
 import MetaMaskStatus from './components/MetaMaskStatus.vue'
 const { ethereum } = window;
 export default {
-  inject: ['nftContractAsDapp'],
+  inject: ['nftContractAsDapp', 'metamask'],
   components: {
     MetaMaskStatus
   },
   data() {
     return {  
-      // selectedNetwork: "homestead",
-      // selectedAccount: ""
     }
   },
   computed: {
@@ -66,28 +64,47 @@ export default {
       })
     },
     async connect() {
-      await this.$store.dispatch("connectToWeb3");
+      //await this.$store.dispatch("connectToWeb3");
+      await this.metamask.connect();
     },
-    // changeNetwork() {
-    //   this.$store.dispatch("changeNetwork", {
-    //     networkName: this.selectedNetwork
-    //   });    
-    // },
-    // showAccount() {
-    //   if (this.selectedAccount.length > 0) {
-    //     this.$router.push({ name: "account", params: { hash: this.selectedAccount} });
-    //     this.selectedAccount = "";
-    //   }
-    // }
   },
   async mounted() {
+    console.log('setting up metamask events')
+    this.metamask.on('EVENT_ACCOUNT_CONNECTED', () => {
+      this.$store.dispatch("updateConnectedAccountBalance", this.metamask.user);
+    }); // The account was connected
+    this.metamask.on('EVENT_ACCOUNT_DISCONNECTED', () => { 
+      window.location.reload()
+    }); // The account was disconnected
+    this.metamask.on('EVENT_ACCOUNT_REMEMBERED', () => { 
+      this.$store.dispatch("updateConnectedAccountBalance", this.metamask.user);
+    }); // The account was remembered
+    this.metamask.on('EVENT_ACCOUNT_SWITCHED', () => { 
+      this.$store.dispatch("updateConnectedAccountBalance", this.metamask.user);
+    }); // The account was switched
+    this.metamask.on('EVENT_METAMASK_FOUND', () => { console.log('EVENT_METAMASK_FOUND'); });         // MetaMask is installed
+    this.metamask.on('ERROR_METAMASK_NOT_FOUND', () => { console.log('ERROR_METAMASK_NOT_FOUND'); });     // MetaMask is not installed
+    this.metamask.on('ERROR_MULTIPLE_WALLETS', () => { console.log('ERROR_MULTIPLE_WALLETS'); });       // Multiple wallets were found
+    this.metamask.on('EVENT_CHAIN_CONNECTED', () => { console.log('EVENT_CHAIN_CONNECTED'); });        // The chain is connected
+    this.metamask.on('ERROR_CHAIN_UNAVAILABLE', () => { console.log('ERROR_CHAIN_UNAVAILABLE'); });      // The chain could not be fetched
+    this.metamask.on('ERROR_ACCOUNT_NOT_FOUND', () => { console.log('ERROR_ACCOUNT_NOT_FOUND'); });      // The account was not found
+    this.metamask.on('ERROR_ACCOUNT_UNAVAILABLE', () => { console.log('ERROR_ACCOUNT_UNAVAILABLE'); });    // The account could not be fetched
+    this.metamask.on('ERROR_PERMISSION_REFUSED', () => { console.log('ERROR_PERMISSION_REFUSED'); });     // The connection attempt was refused
+    this.metamask.on('ERROR_PERMISSION_FAILED', () => { console.log('ERROR_PERMISSION_FAILED'); });      // The connection attempt failed
+    this.metamask.on('EVENT_CHAIN_SWITCHED', () => { console.log('EVENT_CHAIN_SWITCHED'); });         // The chain was switched    
+    await this.metamask.init();
     this.nftContractAsDapp.on("Minted", async (tokenId, to) => {
+        console.log('minted');
         await this.$store.dispatch('updateVideoAfterMint', { tokenId, to });
         this.popToast(`VideoNFT ${tokenId} was successfully minted! The owner is ${to}.`);
     });                
     this.nftContractAsDapp.on("Rented", async (tokenId, renter, owner, amount) => {
         await this.$store.dispatch('updateAfterRent');
         this.popToast(`${renter} rented VideoNFT ${tokenId} from ${owner} for ${amount}!`);
+    });
+    this.nftContractAsDapp.on("ModerationComplete", async (tokenId, moderationInfo) => {
+        await this.$store.dispatch('updateAfterModeration');
+        this.popToast(`Moderation complete for VideoNFT ${tokenId}! Final status: ${moderationInfo.status.label}.`);
     });
   }
 }

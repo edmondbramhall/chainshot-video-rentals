@@ -9,6 +9,8 @@ import DKToast from 'vue-dk-toast'
 import VHSToken from '../app/artifacts/contracts/VHSToken.sol/VHSToken.json'
 import VideoNFT from '../app/artifacts/contracts/VideoNFT.sol/VideoNFT.json'
 import contractConfig from '../app/__config.json'
+import videoStatus from '../shared/videoStatus.js';
+import Metamask from './meta-detector/MetaMask';
 
 const provider = new ethers.providers.Web3Provider(window.ethereum);
 const dappWallet = new ethers.Wallet(`${import.meta.env.VITE_PRIVATE_KEY}`, provider);
@@ -41,37 +43,40 @@ const store = createStore({
             return state.connectedAccount !== null;
         },
         videos (state) {
-            return state.videos;
+            return state.videos.filter(v => v.status !== videoStatus.Rejected);
         },
         videosAwaitingModeration (state) {
-            return state.videos;
+            return state.videos.filter(v => v.status === videoStatus.Pending);
         },
     },
     actions: {
+        async getVideo(context, payload) {
+            return context.getters.videos.find(x => x.tokenId === payload);
+        },
         async getNetwork(context) {
             return await provider.getNetwork();
         },
-        // async getVideos(context) {
-        //     let videos = [];
-        //     const nftContract = new ethers.Contract(contractConfig.nftAddress, VideoNFT.abi, provider.getSigner());
-        //     const totalSupply = await nftContract.totalSupply();
-        //     for (let i = 0; i < totalSupply; i++) {
-        //       const tokenId = await nftContract.tokenByIndex(i);
-        //       const uri = await nftContract.tokenURI(tokenId);
-        //       const owner = await nftContract.ownerOf(tokenId);
-        //       try {
-        //         const resp = await axios.get(`https://gateway.pinata.cloud/ipfs/${uri}`);
-        //         const movieJson = resp.data;
-        //         movieJson.owner = owner;
-        //         movieJson.tokenId = tokenId;
-        //         videos.push(movieJson);
-        //         } catch (err) {
-        //             // Handle Error Here
-        //             console.error(err);
-        //         }
-        //     }
-        //     return videos;
-        // },
+        async getVideosFromContract(context) {
+            let videos = [];
+            const nftContract = new ethers.Contract(contractConfig.nftAddress, VideoNFT.abi, provider.getSigner());
+            const totalSupply = await nftContract.totalSupply();
+            for (let i = 0; i < totalSupply; i++) {
+              const tokenId = await nftContract.tokenByIndex(i);
+              const uri = await nftContract.tokenURI(tokenId);
+              const owner = await nftContract.ownerOf(tokenId);
+              try {
+                const resp = await axios.get(`https://gateway.pinata.cloud/ipfs/${uri}`);
+                const movieJson = resp.data;
+                movieJson.owner = owner;
+                movieJson.tokenId = tokenId;
+                videos.push(movieJson);
+                } catch (err) {
+                    // Handle Error Here
+                    console.error(err);
+                }
+            }
+            return videos;
+        },
         async fetchVideos(context) {
             try {
                 const resp = await axios.get('https://localhost:3054/videos');
@@ -81,33 +86,43 @@ const store = createStore({
                 console.error(err);
             }
         },
-        async connectToWeb3(context) {
-            await provider.send("eth_requestAccounts", []);
-            const accounts = await provider.send("eth_accounts", []);
+        async updateConnectedAccountBalance(context, address = context.state.connectedAccount) {
             const contract = new ethers.Contract(contractConfig.vhsTokenAddress, VHSToken.abi, provider.getSigner());
-            const balance = await contract.balanceOf(accounts[0]);
-            context.commit("setConnectedAccount", { account: accounts[0], balance: balance });
-        },
-        async updateConnectedAccountBalance(context) {
-            const contract = new ethers.Contract(contractConfig.vhsTokenAddress, VHSToken.abi, provider.getSigner());
-            const balance = await contract.balanceOf(context.state.connectedAccount);
-            context.commit("setConnectedAccount", { account: context.state.connectedAccount, balance: balance });
+            const balance = await contract.balanceOf(address);
+            context.commit("setConnectedAccount", { account: address, balance: balance });
         },
         async rentVideo(context, payload) {
             const signer = await provider.getSigner();
             const address = await signer.getAddress();        
-            const amountInWei = ethers.utils.parseUnits(payload.amount.toString(), "ether");
+            //const amountInWei = ethers.utils.parseUnits(payload.amount.toString(), "ether");
             const contract = new ethers.Contract(contractConfig.nftAddress, VideoNFT.abi, signer);
             const tokenContract = new ethers.Contract(contractConfig.vhsTokenAddress, VHSToken.abi, signer);
             await tokenContract.approve(contractConfig.nftAddress, amountInWei);
-            return await contract.rentVideo(contractConfig.vhsTokenAddress, payload.tokenId, amountInWei);
+            //return await contract.rentVideo(contractConfig.vhsTokenAddress, payload.tokenId, amountInWei);
+            return await contract.rentVideo(payload.tokenId, 2); // 2 days
+        },
+        async submitModeration(context, payload) {
+            let items = [];
+            for (var key in payload) {
+                items.push({ 
+                    tokenId: key, 
+                    moderator: context.state.connectedAccount, 
+                    status: payload[key]
+                });
+            }
+            const itemsForContract = items.map(i => { 
+                return { 
+                    tokenId: i.tokenId, moderator: i.moderator, status: i.status.value
+                }
+            });
+            //await nftContractAsDapp.moderateVideo(contractConfig.vhsTokenAddress, itemsForContract, ethers.utils.parseUnits("5", "ether"));
+            await nftContractAsDapp.moderateVideo(itemsForContract);
+            for (let i = 0; i < items.length; i++) {
+                const videosResponse = await axios.put(`https://localhost:3054/videos/${items[i].tokenId}/status`, items[i].status, null);
+                context.commit("updateVideos", videosResponse.data.map(v => v.pinataContent));    
+            }
         },
         async mintVideoNft(context, movieData) {
-            // console.log('minting nft');
-            // console.log('contract ' + contractConfig.nftAddress);            
-            // console.log('private key ' + import.meta.env.VITE_PRIVATE_KEY);
-            // console.log('destination ' + context.state.connectedAccount);
-            // console.log('minting NFT for ', movieData);
             const movieJson = {
                 pinataMetadata: {
                     name: movieData.title
@@ -133,12 +148,12 @@ const store = createStore({
                         pinata_secret_api_key: import.meta.env.VITE_PINATA_APISECRET
                     }
                 });
-                await nftContractAsDapp.safeMint(contractConfig.vhsTokenAddress, context.state.connectedAccount, resp.data.IpfsHash, ethers.utils.parseUnits("50", "ether"));
+                await nftContractAsDapp.safeMint(context.state.connectedAccount, resp.data.IpfsHash);
                 movieJson.pinataContent.tokenId = context.state.videos.length;
                 movieJson.pinataContent.owner = context.state.connectedAccount;
-                movieJson.pinataContent.status = "pending";
-                const videosReponse = await axios.post(`https://localhost:3054/videos`, movieJson, null);
-                context.commit("updateVideos", videosReponse.data.map(v => v.pinataContent));
+                movieJson.pinataContent.status = videoStatus.Unverified;
+                const videosResponse = await axios.post(`https://localhost:3054/videos`, movieJson, null);
+                context.commit("updateVideos", videosResponse.data.map(v => v.pinataContent));
             } catch (err) {
                 // Handle Error Here
                 console.error(err);
@@ -146,20 +161,19 @@ const store = createStore({
         },
         async updateVideoAfterMint(context, payload) {
             // update token balance for connected wallet
-            const videosReponse = await axios.put(`https://localhost:3054/videos/${payload.tokenId}`, 'verified', null);
-            context.commit("updateVideos", videosReponse.data.map(v => v.pinataContent));
+            const videosResponse = await axios.put(`https://localhost:3054/videos/${payload.tokenId}/status`, videoStatus.Pending, null);
+            context.commit("updateVideos", videosResponse.data.map(v => v.pinataContent));
             await context.dispatch("updateConnectedAccountBalance");
         },
         async updateAfterRent(context) {
             await context.dispatch("updateConnectedAccountBalance");
         },
+        async updateAfterModeration(context) {
+            await context.dispatch("updateConnectedAccountBalance");
+        },
         async updateConnectedAccount(context, account) {
             context.commit("setConnectedAccount", account);
         },
-        // async getNetwork (context) {
-        //     const network = await provider.getNetwork();
-        //     return `${network.name}, ${network.chainId}`;
-        // }
     }
 })
    
@@ -167,5 +181,6 @@ const app = createApp(App)
 app.use(router)
 app.use(store);
 app.use(DKToast);
+app.provide('metamask', new Metamask());
 app.provide('nftContractAsDapp', nftContractAsDapp);
 app.mount('#app')

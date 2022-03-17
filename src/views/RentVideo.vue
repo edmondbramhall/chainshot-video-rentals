@@ -1,6 +1,6 @@
 <template>
-  <section class="section">
-    <h2 class="title">Renting video {{$route.params.hash}}</h2>
+  <section v-if="video !== null" class="section">
+    <h2 class="title">Renting VHS#{{video.tokenId}} {{video.name}}</h2>
     <p><a @click="$router.go(-1)" class="button is-primary">Back</a></p>
   </section>
 </template>
@@ -10,15 +10,11 @@ export default {
   mixins: [utils],
   data() {
     return {  
+      video: null
     }
   },
   async mounted() {
-    // this.block = await this.$store.dispatch("getBlock", { 
-    //   hash: this.$route.params.hash 
-    // });
+    this.video = await this.$store.dispatch('getVideo', this.$route.params.tokenId);
   }
 }
 </script>
-
-<style>
-</style>

@@ -9,6 +9,9 @@ async function main() {
   const vHSToken = await VHSToken.deploy(videoNFT.address);
   await vHSToken.deployed();
   console.log("VHSToken deployed to:", vHSToken.address);
+  console.log("Setting defaults in VideoNFT contract...");
+  await videoNFT.setContractDefaults(vHSToken.address, 10, 50, 5, 1);
+  console.log("Defaults set.");
   const config = {
     vhsTokenAddress: vHSToken.address,
     nftAddress: videoNFT.address

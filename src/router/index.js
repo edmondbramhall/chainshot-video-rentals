@@ -13,7 +13,7 @@ const router = createRouter({
       component: Home
     },
     {
-      path: '/rent/:hash',
+      path: '/rent/:tokenId',
       name: 'rent',
       component: RentVideo
     },

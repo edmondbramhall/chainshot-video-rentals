@@ -5,6 +5,13 @@ const https = require('https');
 const fs = require('fs');
 const port = 3054;
 
+const videoStatus = Object.freeze({
+  Unverified: { label: "Unverified", value: 0 },
+  Pending: { label: "Pending", value: 1 },
+  Accepted: { label: "Accepted", value: 2 },
+  Rejected: { label: "Rejected", value: 3 }
+});
+
 // localhost can have cross origin errors
 // depending on the browser you use!
 app.use(cors());
@@ -41,12 +48,8 @@ app.post('/videos', (req, res) => {
   }  
 });
 
-app.put('/videos/:id', (req, res) => {
-  // videos.forEach(v => {
-  //   console.log(v.pinataContent.tokenId, req.params.id);
-  //   console.log(v.pinataContent.tokenId.toString() === req.params.id);
-  // });
-  videos.find(v => v.pinataContent.tokenId.toString() === req.params.id).pinataContent.status = 'verified';
+app.put('/videos/:id/status', (req, res) => {
+  videos.find(v => v.pinataContent.tokenId.toString() === req.params.id).pinataContent.status = req.body;
   try {
     fs.writeFileSync('./videoDB.js', JSON.stringify(videos));
     res.send(videos);
@@ -54,3 +57,4 @@ app.put('/videos/:id', (req, res) => {
     console.error(err)
   }  
 });
+

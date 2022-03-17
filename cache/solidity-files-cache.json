@@ -259,8 +259,8 @@
       ]
     },
     "C:\\Users\\edmon\\source\\repos\\my-chainshot-folder\\video-rentals\\contracts\\VideoNFT.sol": {
-      "lastModificationDate": 1647085070386,
-      "contentHash": "48db8c2e97a61a3e65f8827b3830d559",
+      "lastModificationDate": 1647263759099,
+      "contentHash": "7f1e8821d4ebe9e6c3973212b0db63cb",
       "sourceName": "contracts/VideoNFT.sol",
       "solcConfig": {
         "version": "0.8.4",

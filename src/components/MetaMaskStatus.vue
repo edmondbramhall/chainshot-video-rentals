@@ -1,5 +1,4 @@
 <template>
-  <p class="navbar-item"><span class="tag is-small is-light"> </span></p>
   <div class="navbar-item">
     <div class="buttons">
       <button v-if="isConnected" class="button is-success">
@@ -32,23 +31,6 @@ export default {
     },
   },
   methods: {
-    // async network() {
-    //   return this.$store.dispatch("getNetwork");
-    // },
-    // async connect() {
-    //   await this.$store.dispatch("connectToWeb3");
-    // },
-    async handleAccountsChanged(accounts) {
-      console.log("accounts changed event", accounts);
-      // if (accounts.length === 0) {
-      //   await this.$store.dispatch("updateConnectedAccount", null);
-      // } else if (accounts[0] !== this.$store.getters.connectedAccount) {
-      //   await this.$store.dispatch("updateConnectedAccount", accounts[0]);
-      // }
-    },     
-    handleChainChanged(chainId) {
-      window.location.reload();
-    },
     isMetaMaskInstalled() {
       return Boolean(window.ethereum && window.ethereum.isMetaMask);
     }
@@ -57,8 +39,8 @@ export default {
     if (!this.isMetaMaskInstalled()) {
       alert('You must install MetaMask to use this Dapp!');
     } else {
-      ethereum.on('accountsChanged', (accounts) => this.handleAccountsChanged(accounts));
-      ethereum.on('chainChanged', (chainId) => this.handleChainChanged(chainId));
+      // ethereum.on('accountsChanged', (accounts) => this.handleAccountsChanged(accounts));
+      // ethereum.on('chainChanged', (chainId) => this.handleChainChanged(chainId));
     }
     // ethereum.on('connect', (connectionInfo) => console.log('connect', connectionInfo));
     // ethereum.on('disconnect', (error) => console.log('disconnect', error));

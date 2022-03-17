@@ -8,27 +8,25 @@
         <div v-for="video in videos" :key="video.tokenId" class="column is-one-fifth">
           <div class="card">
             <header class="card-header">
-              <p class="card-header-title">
-                {{video.name}}
-              </p>
+              <p class="tag cover-id">VHS#{{video.tokenId}}</p> 
+              <p class="card-header-title">{{video.name}}</p>
             </header>
             <div class="card-image" style="position:relative;">
               <figure class="image">
-                <span v-if="video.status === 'pending'" class="tag is-danger is-medium is-rounded" style="opacity:70%;position:absolute;top:87%;left:5%;width:90%">{{video.status}}</span>
-                <span v-else class="tag is-success is-medium is-rounded" style="opacity:70%;position:absolute;top:87%;left:5%;width:90%">{{video.status}}</span>
+                <span v-if="video.status.value === videoStatus.Accepted.value" class="tag is-success is-medium is-rounded cover-flash">{{video.status.label}}</span>
+                <span v-else class="tag is-danger is-medium is-rounded cover-flash">{{video.status.label}}</span>
                 <img :src="video.image" :alt="video.name" width="342">
               </figure>
             </div>          
             <div v-if="video.owner" class="card-content">
               <div class="tags">
                 <span class="tag is-warning">Owner: {{shortenHex(video.owner)}}</span>
-                <span class="tag is-warning">Token: {{video.tokenId}}</span>
               </div>
             </div>
             <div class="card-footer">
               <div class="card-footer-item">
-                <button v-if="video.status === 'verified'" @click.prevent="rent(video.tokenId)" class="button is-success">watch for 10 VHS</button>  
-                <button v-else class="button" disabled>watch for 10 VHS</button>
+                <button v-if="video.status.value === videoStatus.Unverified || video.status.value === videoStatus.Rejected.value" class="button" disabled>watch for 10 VHS</button>
+                <button v-else @click.prevent="rent(video.tokenId)" class="button is-success">watch for 10 VHS</button>
               </div>
             </div>
           </div>
@@ -39,10 +37,13 @@
 </template>
 <script>
 import utils from '../mixins/utils.js'
+import videoStatus from '../../shared/videoStatus.js';
+
 export default {
   mixins: [utils],
   data() {
     return {  
+      videoStatus: videoStatus
     }
   },
   computed: {
@@ -55,7 +56,8 @@ export default {
       await this.$store.dispatch("fetchVideos");
     },
     async rent(tokenId) {
-      await this.$store.dispatch("rentVideo", { tokenId: tokenId, amount: 10 });
+      //await this.$store.dispatch("rentVideo", { tokenId: tokenId, amount: 10 });
+      this.$router.push({ name: 'rent', params: { tokenId: tokenId } });
     },
   },
   async mounted() {

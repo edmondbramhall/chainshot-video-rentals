@@ -2,3 +2,17 @@
 .toast {
     background-color: blueviolet;
 }
+.cover-flash {
+    opacity:70%;
+    position:absolute;
+    top:87%;
+    left:5%;
+    width:90%;
+    text-transform: uppercase;
+}
+
+.cover-id {
+    position:absolute;
+    top:-13px;
+    left:38%;
+}
