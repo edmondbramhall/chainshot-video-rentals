@@ -14,15 +14,15 @@ module.exports = {
     artifacts: "./app/artifacts",
   },
   networks: {
-    // hardhat: {
-    //   chainId: 1338
-    // },    
-    // localhost: {
-    //   url: "http://localhost:7545",
-    //   accounts: [process.env.VITE_PRIVATE_KEY]
-    // },
+    hardhat: {
+      chainId: 31337
+    },    
     rinkeby: {
       url: process.env.RINKEBY_URL,
+      accounts: [process.env.VITE_PRIVATE_KEY]
+    },
+    ropsten: {
+      url: process.env.ROPSTEN_URL,
       accounts: [process.env.VITE_PRIVATE_KEY]
     }
   },

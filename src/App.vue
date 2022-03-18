@@ -39,6 +39,7 @@
 </template>
 <script>
 import { RouterLink, RouterView } from 'vue-router'
+import { ethers } from "ethers";
 import MetaMaskStatus from './components/MetaMaskStatus.vue'
 const { ethereum } = window;
 export default {
@@ -94,17 +95,16 @@ export default {
     this.metamask.on('EVENT_CHAIN_SWITCHED', () => { console.log('EVENT_CHAIN_SWITCHED'); });         // The chain was switched    
     await this.metamask.init();
     this.nftContractAsDapp.on("Minted", async (tokenId, to) => {
-        console.log('minted');
         await this.$store.dispatch('updateVideoAfterMint', { tokenId, to });
         this.popToast(`VideoNFT ${tokenId} was successfully minted! The owner is ${to}.`);
     });                
-    this.nftContractAsDapp.on("Rented", async (tokenId, renter, owner, amount) => {
+    this.nftContractAsDapp.on("Rented", async (tokenId, renter, owner, amount, days) => {
         await this.$store.dispatch('updateAfterRent');
-        this.popToast(`${renter} rented VideoNFT ${tokenId} from ${owner} for ${amount}!`);
+        this.popToast(`${renter} rented VideoNFT ${tokenId} from ${owner} for ${days} days - cost ${ethers.utils.formatEther(amount)}!`);
     });
     this.nftContractAsDapp.on("ModerationComplete", async (tokenId, moderationInfo) => {
         await this.$store.dispatch('updateAfterModeration');
-        this.popToast(`Moderation complete for VideoNFT ${tokenId}! Final status: ${moderationInfo.status.label}.`);
+        this.popToast(`Moderation complete for VideoNFT ${tokenId}! Final status: ${moderationInfo.status}.`);
     });
   }
 }

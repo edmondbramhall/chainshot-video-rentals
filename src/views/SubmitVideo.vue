@@ -96,7 +96,7 @@ export default {
   },
   methods: {
     getRandomTmdbId() {
-      return this.tmdbIds[Math.floor(Math.random() * this.tmdbIds.length - 1)];
+      return this.tmdbIds[Math.floor(Math.random() * this.tmdbIds.length)];
     },
     async mint() {
       await this.$store.dispatch("mintVideoNft", this.movieData);

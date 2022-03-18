@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./VHSToken.sol";
 
 contract VideoNFT is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable {
     using Counters for Counters.Counter;
@@ -36,7 +37,7 @@ contract VideoNFT is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable {
     uint256 public defaultRentalPricePerDay;
     uint256 public moderationReward;
     uint256 public mintReward;
-    IERC20 private ERC20Contract;
+    VHSToken private ERC20Contract;
     uint8 public numberOfModsRequired; 
     // moderation data arranged per token id
     mapping (uint256 => ModerationInfo) public moderatedTokens;
@@ -48,30 +49,32 @@ contract VideoNFT is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable {
     mapping (address => mapping (uint256 => uint256)) public rentals;
 
     event Minted(uint256, address);
-    event Rented(uint256, address, address, uint256);
+    event Rented(uint256, address, address, uint256, uint8);
     event ModerationComplete(uint256, ModerationInfo);
 
     modifier ifDefaultsAreSet {
-        require(contractInitialized, "Function called until contract defaults are set.");
+        require(contractInitialized, "Function cannot be called until contract defaults are set.");
         _;
     }
 
-    constructor() ERC721("VideoNFT", "VHSN") {
+    // constructor() ERC721("VideoNFT", "VHSN") {
+    // }
+
+    constructor(address vhsTokenAddress) ERC721("VideoNFT", "VHSNFT") {
+        // require(_erc20ContractAddress != address(0), "ERC20 contract address must be supplied.");
+        // require(_erc20ContractAddress != address(this), "ERC20 contract address must be supplied.");
+        ERC20Contract = VHSToken(vhsTokenAddress);
+        erc20ContractAddress = vhsTokenAddress;
+        //todo: use ERC165 to check that the supplied contract really is a token contract
+        //require(erc20Contract.supportsInterface('0x36372b07'), "The contract address supplied must be an ERC20 contract.");
     }
 
     // housekeeping functions called by the owner
-    function setContractDefaults(address _erc20ContractAddress, uint256 _defaultRentalPricePerDay, uint256 _mintReward, uint256 _moderationReward, uint8 _requiredMods) external onlyOwner {
-        require(_erc20ContractAddress != address(0), "ERC20 contract address must be supplied.");
-        require(_erc20ContractAddress != address(this), "ERC20 contract address must be supplied.");
+    function setContractDefaults(uint256 _defaultRentalPricePerDay, uint256 _mintReward, uint256 _moderationReward, uint8 _requiredMods) external onlyOwner {
         require(_defaultRentalPricePerDay > 0);
         require(_moderationReward > 0);
         require(_mintReward > 0);
         require(_requiredMods > 0);
-        erc20ContractAddress = _erc20ContractAddress;
-        IERC20 erc20Contract = IERC20(erc20ContractAddress);
-        //todo: use ERC165 to check that the supplied contract really is a token contract
-        //require(erc20Contract.supportsInterface('0x36372b07'), "The contract address supplied must be an ERC20 contract.");
-        ERC20Contract = erc20Contract;
         defaultRentalPricePerDay = _defaultRentalPricePerDay;
         moderationReward = _moderationReward;
         mintReward = _mintReward;
@@ -89,6 +92,37 @@ contract VideoNFT is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable {
         emit Minted(tokenId, to);
     }
 
+    // functions called by NFT owners
+    function changeRentalPricePerDay(uint256 tokenId, uint256 amount) external ifDefaultsAreSet {
+        require(_exists(tokenId), "The token id supplied does not exist.");
+        require(ownerOf(tokenId) == msg.sender, "Only the owner of an NFT can change its rental price.");
+        tokenRentalPricesPerDay[tokenId] = amount;
+    }
+
+    // functions called by anyone
+    function faucet() external payable {
+        (bool sent) = ERC20Contract.transfer(msg.sender, 1000);
+        require(sent, "Failed to transfer token to user");
+    } 
+
+    function rentVideo(uint256 tokenId, uint8 _days) external payable ifDefaultsAreSet {
+        require(_exists(tokenId), "The token id supplied does not exist.");
+        require(_days > 0, "Days rented may not be zero.");
+        address tokenOwner = ownerOf(tokenId);
+        uint256 amount = rentalPricePerDay(tokenId) * _days;
+        // todo: calculate expiry
+        uint256 expiry = block.timestamp;
+        require(ERC20Contract.balanceOf(msg.sender) >= amount, "The video renter doesn't have enough tokens to watch this video.");
+        require(tokenOwner != msg.sender, "You can't rent an NFT from yourself.");
+        // todo: transfer 90% from the caller to the videoOwner address
+        // todo: transfer 10% to the owner of this contract
+        ERC20Contract.transferFrom(tokenOwner, amount);
+        // ERC20Contract.approve(address(this), amount);
+        // ERC20Contract.transferFrom(msg.sender, tokenOwner, amount);
+        rentals[msg.sender][tokenId] = expiry;
+        emit Rented(tokenId, msg.sender, tokenOwner, amount, _days);
+    }
+
     function moderateVideo(ModerationItem[] memory items) external ifDefaultsAreSet {
         // todo: we know how many moderations each address has done, so perhaps we could
         // weight their moderation by the level of their community involvement
@@ -96,6 +130,7 @@ contract VideoNFT is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable {
         for (uint i = 0; i < items.length; i++) {
             uint256 thisTokenId = items[i].tokenId;
             require(_exists(thisTokenId), "The token id supplied does not exist.");
+            // todo: sender can't moderate their own NFT
             // todo: require sender to have not already moderated this item
             // todo: ignore if this item has already recieved sufficient moderation
             // set moderation value for this token/sender combo
@@ -114,42 +149,19 @@ contract VideoNFT is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable {
                 moderatedTokens[thisTokenId].status = finalStatus;
                 // pay the moderators
                 for (uint k = 0; k < moderatedTokens[thisTokenId].moderations.length; k++) {
+                    // todo: can use msg.sender
                     // get the address of this moderator
                     address moderatorAddress = moderatedTokens[thisTokenId].moderations[k].moderator;
                     // increment that moderators "successful moderations" count so we have a reference for
                     // how useful they are to the community without having to examine all the moderations
                     // by token
                     modsTotalByAddress[moderatorAddress]++;
-                    ERC20Contract.transfer(moderatorAddress, rewardAmount);
+                    ERC20Contract.transfer(moderatorAddress, moderationReward);
                 }
                 emit ModerationComplete(thisTokenId, moderatedTokens[thisTokenId]);
             }
         }
     }  
-
-    // functions called by NFT owners
-    function changeRentalPricePerDay(uint256 tokenId, uint256 amount) external ifDefaultsAreSet {
-        require(_exists(tokenId), "The token id supplied does not exist.");
-        require(ownerOf(tokenId) == msg.sender, "Only the owner of an NFT can change its rental price.");
-        tokenRentalPricesPerDay[tokenId] = amount;
-    }
-
-    // functions called by anyone
-    function rentVideo(uint256 tokenId, uint8 _days) external ifDefaultsAreSet {
-        require(_exists(tokenId), "The token id supplied does not exist.");
-        require(_days > 0, "Days rented may not be zero.");
-        address tokenOwner = ownerOf(tokenId);
-        uint256 amount = rentalPricePerDay(tokenId) * _days;
-        // todo: calculate expiry
-        uint256 expiry = block.timestamp;
-        require(ERC20Contract.balanceOf(msg.sender) >= amount, "The video renter doesn't have enough tokens to watch this video.");
-        require(tokenOwner != msg.sender, "You can't rent an NFT from yourself.");
-        // todo: transfer 90% from the caller to the videoOwner address
-        // todo: transfer 10% to the owner of this contract
-        ERC20Contract.transferFrom(msg.sender, tokenOwner, amount);
-        rentals[msg.sender][tokenId] = expiry;
-        emit Rented(tokenId, msg.sender, tokenOwner, amount);
-    }
 
     function rentalPricePerDay(uint256 tokenId) public view ifDefaultsAreSet returns (uint256) {
         require(_exists(tokenId), "The token id supplied does not exist.");

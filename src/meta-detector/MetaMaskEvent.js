@@ -1,5 +1,5 @@
 class MetaMaskEvent {
-    static debug = true;
+    static debug = false;
     static handler = null;
     static handlers = new Map();
   
