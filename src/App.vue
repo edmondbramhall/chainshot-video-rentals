@@ -65,12 +65,10 @@ export default {
       })
     },
     async connect() {
-      //await this.$store.dispatch("connectToWeb3");
       await this.metamask.connect();
     },
   },
   async mounted() {
-    console.log('setting up metamask events')
     this.metamask.on('EVENT_ACCOUNT_CONNECTED', () => {
       this.$store.dispatch("updateConnectedAccountBalance", this.metamask.user);
     }); // The account was connected
@@ -83,6 +81,7 @@ export default {
     this.metamask.on('EVENT_ACCOUNT_SWITCHED', () => { 
       this.$store.dispatch("updateConnectedAccountBalance", this.metamask.user);
     }); // The account was switched
+    // other available events that we're considering out of scope
     this.metamask.on('EVENT_METAMASK_FOUND', () => { console.log('EVENT_METAMASK_FOUND'); });         // MetaMask is installed
     this.metamask.on('ERROR_METAMASK_NOT_FOUND', () => { console.log('ERROR_METAMASK_NOT_FOUND'); });     // MetaMask is not installed
     this.metamask.on('ERROR_MULTIPLE_WALLETS', () => { console.log('ERROR_MULTIPLE_WALLETS'); });       // Multiple wallets were found

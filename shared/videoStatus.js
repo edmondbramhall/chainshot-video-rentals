@@ -4,4 +4,7 @@ const videoStatus = Object.freeze({
     Accepted: { label: "Ready to rent", value: 2 },
     Rejected: { label: "Rejected", value: 3 }
 });
+function getLabel(value) {
+    return videoStatus.find(vs => vs.value === value).label || "";
+}
 export default videoStatus;

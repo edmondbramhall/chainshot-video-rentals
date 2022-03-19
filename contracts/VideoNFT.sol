@@ -57,16 +57,13 @@ contract VideoNFT is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable {
         _;
     }
 
-    // constructor() ERC721("VideoNFT", "VHSN") {
-    // }
-
     constructor(address vhsTokenAddress) ERC721("VideoNFT", "VHSNFT") {
-        // require(_erc20ContractAddress != address(0), "ERC20 contract address must be supplied.");
-        // require(_erc20ContractAddress != address(this), "ERC20 contract address must be supplied.");
-        ERC20Contract = VHSToken(vhsTokenAddress);
-        erc20ContractAddress = vhsTokenAddress;
+        require(vhsTokenAddress != address(0), "ERC20 contract address must be supplied.");
+        VHSToken erc20Contract = VHSToken(vhsTokenAddress);
         //todo: use ERC165 to check that the supplied contract really is a token contract
         //require(erc20Contract.supportsInterface('0x36372b07'), "The contract address supplied must be an ERC20 contract.");
+        ERC20Contract = erc20Contract;
+        erc20ContractAddress = vhsTokenAddress;
     }
 
     // housekeeping functions called by the owner
@@ -100,11 +97,6 @@ contract VideoNFT is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable {
     }
 
     // functions called by anyone
-    function faucet() external payable {
-        (bool sent) = ERC20Contract.transfer(msg.sender, 1000);
-        require(sent, "Failed to transfer token to user");
-    } 
-
     function rentVideo(uint256 tokenId, uint8 _days) external payable ifDefaultsAreSet {
         require(_exists(tokenId), "The token id supplied does not exist.");
         require(_days > 0, "Days rented may not be zero.");
@@ -116,9 +108,7 @@ contract VideoNFT is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable {
         require(tokenOwner != msg.sender, "You can't rent an NFT from yourself.");
         // todo: transfer 90% from the caller to the videoOwner address
         // todo: transfer 10% to the owner of this contract
-        ERC20Contract.transferFrom(tokenOwner, amount);
-        // ERC20Contract.approve(address(this), amount);
-        // ERC20Contract.transferFrom(msg.sender, tokenOwner, amount);
+        ERC20Contract.transferFrom(msg.sender, tokenOwner, amount);
         rentals[msg.sender][tokenId] = expiry;
         emit Rented(tokenId, msg.sender, tokenOwner, amount, _days);
     }

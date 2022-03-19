@@ -69,9 +69,6 @@
             </figure>
           </div>          
         </div>
-        <!-- <div class="buttons">
-          <button @click="faucet" class="button">Hit faucet</button>
-        </div> -->
       </div>
     </div>
   </section>

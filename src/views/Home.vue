@@ -57,7 +57,6 @@ export default {
     },
     async rent(tokenId) {
       await this.$store.dispatch("rentVideo", { tokenId: tokenId, amount: 10 });
-      // this.$router.push({ name: 'rent', params: { tokenId: tokenId } });
     },
   },
   async mounted() {

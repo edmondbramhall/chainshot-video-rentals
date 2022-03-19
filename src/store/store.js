@@ -12,7 +12,6 @@ const nftContractAsDapp = new ethers.Contract(contractConfig.nftAddress, VideoNF
 
 const contract = new ethers.Contract(contractConfig.vhsTokenAddress, VHSToken.abi, provider.getSigner());
 const balance = await contract.balanceOf("0x9930fd228C75b9bDc14e29175A6CbF485c1B5B5a");
-console.log(ethers.utils.formatEther(balance));
 
 const store = createStore({
     state () {
@@ -92,11 +91,13 @@ const store = createStore({
         },
         async rentVideo(context, payload) {
             const signer = await provider.getSigner();
-            const contract = new ethers.Contract(contractConfig.nftAddress, VideoNFT.abi, signer);
+            const nftContract = new ethers.Contract(contractConfig.nftAddress, VideoNFT.abi, signer);
+            const tokenContract = new ethers.Contract(contractConfig.vhsTokenAddress, VHSToken.abi, signer);
             const rentalPeriodInDays = 1;
-            const amountInWei = await contract.rentalPricePerDay(payload.tokenId);
+            const amountInWei = await nftContract.rentalPricePerDay(payload.tokenId);
             const total = rentalPeriodInDays * amountInWei;
-            return await contract.rentVideo(payload.tokenId, rentalPeriodInDays);
+            await tokenContract.approve(contractConfig.nftAddress, total.toString());
+            return await nftContract.rentVideo(payload.tokenId, rentalPeriodInDays);
         },
         async submitModeration(context, payload) {
             let items = [];
@@ -112,7 +113,6 @@ const store = createStore({
                     tokenId: i.tokenId, moderator: i.moderator, status: i.status.value
                 }
             });
-            //await nftContractAsDapp.moderateVideo(contractConfig.vhsTokenAddress, itemsForContract, ethers.utils.parseUnits("5", "ether"));
             const signer = await provider.getSigner();
             const contract = new ethers.Contract(contractConfig.nftAddress, VideoNFT.abi, signer);
             await contract.moderateVideo(itemsForContract);
@@ -165,7 +165,6 @@ const store = createStore({
             await context.dispatch("updateConnectedAccountBalance");
         },
         async updateAfterRent(context) {
-            console.log('update after rent')
             await context.dispatch("updateConnectedAccountBalance");
         },
         async updateAfterModeration(context) {
