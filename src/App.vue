@@ -2,7 +2,7 @@
   <div>
     <nav class="navbar is-white has-shadow" role="navigation" aria-label="main navigation">
       <div class="navbar-brand">
-        <RouterLink to="/" class="navbar-item subtitle">Evil Ed's Video Rentals</RouterLink>
+        <RouterLink to="/" class="navbar-item subtitle">Evil Ed's Video Store</RouterLink>
       </div>
       <div class="navbar-menu">
         <div class="navbar-start">
