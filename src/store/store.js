@@ -4,7 +4,7 @@ import axios  from 'axios'
 import VHSToken from '../../app/artifacts/contracts/VHSToken.sol/VHSToken.json'
 import VideoNFT from '../../app/artifacts/contracts/VideoNFT.sol/VideoNFT.json'
 import contractConfig from '../../app/__config.json'
-import videoStatus from '../../shared/videoStatus.js';
+import { videoStatus, getStatus } from '../../shared/videoStatus.js';
 
 const provider = new ethers.providers.Web3Provider(window.ethereum);
 const dappWallet = new ethers.Wallet(`${import.meta.env.VITE_PRIVATE_KEY}`, provider);
@@ -54,19 +54,19 @@ const store = createStore({
         async getNetwork(context) {
             return await provider.getNetwork();
         },
-        async getVideosFromContract(context) {
+        async fetchVideosFromContract(context) {
             let videos = [];
             const nftContract = new ethers.Contract(contractConfig.nftAddress, VideoNFT.abi, provider.getSigner());
             const totalSupply = await nftContract.totalSupply();
             for (let i = 0; i < totalSupply; i++) {
               const tokenId = await nftContract.tokenByIndex(i);
-              const uri = await nftContract.tokenURI(tokenId);
-              const owner = await nftContract.ownerOf(tokenId);
+              const [owner, uri, status] = await nftContract.tokenInfo(tokenId);
               try {
                 const resp = await axios.get(`https://gateway.pinata.cloud/ipfs/${uri}`);
                 const movieJson = resp.data;
                 movieJson.owner = owner;
                 movieJson.tokenId = tokenId;
+                movieJson.status = getStatus(status);
                 videos.push(movieJson);
                 } catch (err) {
                     // Handle Error Here
@@ -119,7 +119,7 @@ const store = createStore({
             for (let i = 0; i < items.length; i++) {
                 const videosResponse = await axios.put(`https://localhost:3054/videos/${items[i].tokenId}/status`, items[i].status, null);
                 context.commit("updateVideos", videosResponse.data.map(v => v.pinataContent));    
-            }
+            }    
         },
         async mintVideoNft(context, movieData) {
             const movieJson = {

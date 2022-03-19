@@ -128,7 +128,7 @@ contract VideoNFT is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable {
             // check whether a sufficient number of moderations have occurred
             if (moderatedTokens[thisTokenId].moderations.length == numberOfModsRequired) {
                 // todo: refactor this into function
-                // assume status is accepted
+                // todo: currently assuming status is accepted
                 ModerationStatus finalStatus = ModerationStatus.Accepted;
                 for (uint j = 0; j < moderatedTokens[thisTokenId].moderations.length; j++) {
                     if (moderatedTokens[thisTokenId].moderations[j].status == ModerationStatus.Rejected) {
@@ -159,6 +159,11 @@ contract VideoNFT is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable {
         if (price == 0)
             return defaultRentalPricePerDay;
         return price;
+    }
+
+    function tokenInfo(uint256 tokenId) public view ifDefaultsAreSet returns (address, string memory, ModerationStatus) {
+        require(_exists(tokenId), "The token id supplied does not exist.");
+        return (ownerOf(tokenId), tokenURI(tokenId), moderatedTokens[tokenId].status);
     }
 
     function hasRental(uint256 tokenId) external view ifDefaultsAreSet returns (bool) {

@@ -8,13 +8,14 @@
         <div class="navbar-start">
           <RouterLink to="/submit" class="navbar-item">Submit video</RouterLink>
           <RouterLink to="/moderate" class="navbar-item">Moderate videos</RouterLink>
+          <RouterLink to="/enumerate" class="navbar-item">Enumerate videos</RouterLink>
         </div>
         <div class="navbar-end">
           <meta-mask-status></meta-mask-status>
         </div>
       </div>
     </nav>
-    <RouterView />
+    <RouterView @contractError="handleContractError" />
     <div v-if="!isConnected" class="modal is-active">
       <div class="modal-background"></div>
       <div class="modal-content">
@@ -41,6 +42,7 @@
 import { RouterLink, RouterView } from 'vue-router'
 import { ethers } from "ethers";
 import MetaMaskStatus from './components/MetaMaskStatus.vue'
+import { videoStatus, getStatus } from '../shared/videoStatus.js';
 const { ethereum } = window;
 export default {
   inject: ['nftContractAsDapp', 'metamask'],
@@ -57,11 +59,22 @@ export default {
     }
   },
   methods: {
-    popToast(msg) {
+    handleContractEvent(msg) {
       this.$toast(msg, {
         slotLeft: '<i class="fa fa-bell"></i>',
         positionX: 'center',
         positionY: 'top'
+      })
+    },
+    handleContractError(ex) {
+      const msg = `${ex.data.code}: ${ex.data.message}`;
+      this.$toast(msg, {
+        duration: 5000,
+        slotLeft: '<i class="fa fa-triangle-exclamation"></i>',
+        type: 'error', // 'success', 'error' and 'passive'
+        positionX: 'center',
+        positionY: 'top',
+        disableClick: true
       })
     },
     async connect() {
@@ -95,15 +108,15 @@ export default {
     await this.metamask.init();
     this.nftContractAsDapp.on("Minted", async (tokenId, to) => {
         await this.$store.dispatch('updateVideoAfterMint', { tokenId, to });
-        this.popToast(`VideoNFT ${tokenId} was successfully minted! The owner is ${to}.`);
+        this.handleContractEvent(`VideoNFT ${tokenId} was successfully minted! The owner is ${to}.`);
     });                
     this.nftContractAsDapp.on("Rented", async (tokenId, renter, owner, amount, days) => {
         await this.$store.dispatch('updateAfterRent');
-        this.popToast(`${renter} rented VideoNFT ${tokenId} from ${owner} for ${days} days - cost ${ethers.utils.formatEther(amount)}!`);
+        this.handleContractEvent(`${renter} rented VideoNFT ${tokenId} from ${owner} for ${days} days - cost ${ethers.utils.formatEther(amount)}!`);
     });
     this.nftContractAsDapp.on("ModerationComplete", async (tokenId, moderationInfo) => {
         await this.$store.dispatch('updateAfterModeration');
-        this.popToast(`Moderation complete for VideoNFT ${tokenId}! Final status: ${moderationInfo.status}.`);
+        this.handleContractEvent(`Moderation complete for VideoNFT ${tokenId}! Final status: ${getStatus(moderationInfo.status).label}.`);
     });
   }
 }

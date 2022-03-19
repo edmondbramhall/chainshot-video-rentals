@@ -80,7 +80,7 @@ export default {
   mixins: [utils],
   data() {
     return {  
-      tmdbIds: [33518, 10489, 9362, 40466, 9360, 9825, 578, 38258, 53060],
+      tmdbIds: [33518, 10489, 9362, 40466, 9360, 9825, 578, 38258],
       tmdbId: null,
       movieData: {
         title: null,
@@ -96,8 +96,12 @@ export default {
       return this.tmdbIds[Math.floor(Math.random() * this.tmdbIds.length)];
     },
     async mint() {
-      await this.$store.dispatch("mintVideoNft", this.movieData);
-      this.$router.push({ path: '/' });
+      try {
+        await this.$store.dispatch("mintVideoNft", this.movieData);
+        this.$router.push({ path: '/' });
+      } catch (ex) {
+          this.$emit("contractError", ex);
+      }
     },
     async populateFormFromTmdb() {
       const getResult = await axios.get(`https://api.themoviedb.org/3/movie/${this.tmdbId}?api_key=${import.meta.env.VITE_TMDB_APIKEY}&append_to_response=videos`);

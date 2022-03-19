@@ -37,7 +37,7 @@
 </template>
 <script>
 import utils from '../mixins/utils.js'
-import videoStatus from '../../shared/videoStatus.js';
+import { videoStatus } from '../../shared/videoStatus.js';
 
 export default {
   mixins: [utils],
@@ -56,7 +56,12 @@ export default {
       await this.$store.dispatch("fetchVideos");
     },
     async rent(tokenId) {
-      await this.$store.dispatch("rentVideo", { tokenId: tokenId, amount: 10 });
+      try {
+        await this.$store.dispatch("rentVideo", { tokenId: tokenId, amount: 10 });
+        //this.$router.push({ path: '/' });
+      } catch (ex) {
+          this.$emit("contractError", ex);
+      }
     },
   },
   async mounted() {

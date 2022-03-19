@@ -40,12 +40,13 @@
 </template>
 <script>
 import utils from '../mixins/utils.js'
-import videoStatus from '../../shared/videoStatus.js'
+import { videoStatus } from '../../shared/videoStatus.js'
 export default {
   mixins: [utils],
   data() {
     return {  
       videos: [],
+      videoStatus: videoStatus,
       moderationSessionData: []
     }
   },
@@ -74,8 +75,12 @@ export default {
       return this.moderationSessionData[tokenId] === videoStatus.Rejected;
     },
     async submit() {
-      await this.$store.dispatch("submitModeration", this.moderationSessionData);
-      this.$router.push({ path: '/' });
+      try {
+        await this.$store.dispatch("submitModeration", this.moderationSessionData);
+        this.$router.push({ path: '/' });          
+      } catch (ex) {
+          this.$emit("contractError", ex);
+      }
     },
     async getVideos() {
       await this.$store.dispatch("fetchVideos");
