@@ -1,4 +1,30 @@
 # Evil Ed's Video Store
 
-##Issues
-1. Keeping the list of videos held by the dApp in sync with the blockchain is difficult. The obvious approach is to use the blockchain as the database, and generate the list of data by enumerating the tokens in the VideoNFT contract. The massive drawbacks of this are (a) that it's very slow, and (b) that it's expensive. The approach I took instead is to maintain the list of videos on the server, and persist it to db (in this case just a file). That's not perfect either though, because to keep this list up to date the dApp needs to react to events fired by the VideoNFT contract. Should the dApp be unavailable for any reason (eg server outage, or user moves away from the site) then we'll miss events and our local list falls out of sync. Overall the best approach is probably to use an external provider that's working with on-chain data, but providing that to the dApp over an off-chain API, if such a service exists (Miralis?).
+##Run the Hardhat tests
+```
+npx hardhat test
+```
+
+##Deploy the contracts
+```
+npx hardhat run scripts/deploy.js
+```
+
+##Change NFT contract defaults (optional) 
+```
+npx hardhat run scripts/updateVideoNFTContract.js
+```
+
+##Run the server
+```
+cd server
+node index.js
+```
+
+##Run the client application
+```
+npm run dev
+```
+
+##Presentation
+[View the slideshow](https://docs.google.com/presentation/d/13aqJm9ggCjHAlNZw3NiWW835vrn0u7rQ_8f_fLnn6lE/edit?usp=sharing)
