@@ -25,8 +25,8 @@
             </div>
             <div class="card-footer">
               <div class="card-footer-item">
-                <button v-if="video.status.value === videoStatus.Unverified || video.status.value === videoStatus.Rejected.value" class="button" disabled>watch for 10 VHS</button>
-                <button v-else @click.prevent="rent(video.tokenId)" class="button is-success">watch for 10 VHS</button>
+                <button v-if="video.status.value === videoStatus.Accepted.value" @click.prevent="rent(video.tokenId)" class="button is-success">watch for 10 VHS</button>
+                <button v-else class="button" disabled>watch for 10 VHS</button>
               </div>
             </div>
           </div>
@@ -58,7 +58,7 @@ export default {
     async rent(tokenId) {
       try {
         await this.$store.dispatch("rentVideo", { tokenId: tokenId, amount: 10 });
-        //this.$router.push({ path: '/' });
+        this.$router.push({ name: 'rent', params: { tokenId: tokenId } });
       } catch (ex) {
           this.$emit("contractError", ex);
       }

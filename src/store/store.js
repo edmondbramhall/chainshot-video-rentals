@@ -10,9 +10,6 @@ const provider = new ethers.providers.Web3Provider(window.ethereum);
 const dappWallet = new ethers.Wallet(`${import.meta.env.VITE_PRIVATE_KEY}`, provider);
 const nftContractAsDapp = new ethers.Contract(contractConfig.nftAddress, VideoNFT.abi, dappWallet);
 
-const contract = new ethers.Contract(contractConfig.vhsTokenAddress, VHSToken.abi, provider.getSigner());
-const balance = await contract.balanceOf("0x9930fd228C75b9bDc14e29175A6CbF485c1B5B5a");
-
 const store = createStore({
     state () {
         return {
@@ -49,7 +46,7 @@ const store = createStore({
     },
     actions: {
         async getVideo(context, payload) {
-            return context.getters.videos.find(x => x.tokenId === payload);
+            return context.getters.videos.find(x => x.tokenId.toString() === payload.toString());
         },
         async getNetwork(context) {
             return await provider.getNetwork();

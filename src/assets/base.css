@@ -1,4 +1,8 @@
 @import "https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css";
+body, button {
+    font-family: 'Bubblegum Sans';
+    size: 1.2em;
+}
 .toast {
     background-color: blueviolet;
 }
